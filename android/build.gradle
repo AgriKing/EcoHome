@@ -1,0 +1,33 @@
+allprojects {buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:7.3.0"  // Change to your correct AGP version
+        classpath "com.google.gms:google-services:4.3.15" // Add this for Firebase
+    }
+}
+
+    allprojects {
+        repositories {
+            google()
+            mavenCentral()
+        }
+    }
+// Check for the latest version
+    }
+
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
+
