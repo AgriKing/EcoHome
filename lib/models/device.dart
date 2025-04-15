@@ -1,9 +1,22 @@
-// lib/models/device.dart
-class Device {
+import 'package:hive/hive.dart';
+
+part 'device.g.dart'; // Needed for Hive codegen
+
+@HiveType(typeId: 0)
+class Device extends HiveObject {
+  @HiveField(0)
   final int id;
+
+  @HiveField(1)
   final String name;
+
+  @HiveField(2)
   bool isOn;
+
+  @HiveField(3)
   final int watts;
+
+  @HiveField(4)
   final int hoursPerDay;
 
   Device({
@@ -14,7 +27,7 @@ class Device {
     required this.hoursPerDay,
   });
 
-  double get dailyConsumption => watts * hoursPerDay / 1000; // in kWh
+  double get dailyConsumption => watts * hoursPerDay / 1000;
 
   Device copyWith({
     int? id,
@@ -32,23 +45,19 @@ class Device {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'isOn': isOn,
-      'watts': watts,
-      'hoursPerDay': hoursPerDay,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'name': name,
+    'isOn': isOn,
+    'watts': watts,
+    'hoursPerDay': hoursPerDay,
+  };
 
-  factory Device.fromMap(Map<String, dynamic> map) {
-    return Device(
-      id: map['id'],
-      name: map['name'],
-      isOn: map['isOn'],
-      watts: map['watts'],
-      hoursPerDay: map['hoursPerDay'],
-    );
-  }
+  factory Device.fromMap(Map<String, dynamic> map) => Device(
+    id: map['id'],
+    name: map['name'],
+    isOn: map['isOn'],
+    watts: map['watts'],
+    hoursPerDay: map['hoursPerDay'],
+  );
 }

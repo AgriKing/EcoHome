@@ -1,7 +1,7 @@
-// lib/screens/energy_insights_screen.dart
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../widgets/custom_chart.dart';
+import '../models/device.dart'; // Add this import
 
 class EnergyInsightsScreen extends StatefulWidget {
   @override
@@ -169,7 +169,7 @@ class _EnergyInsightsScreenState extends State<EnergyInsightsScreen>
   }
 
   Widget _buildDeviceBreakdown() {
-    final activeDevices = MockData.devices.where((d) => d.isOn).toList();
+    final activeDevices = MockData.initialDevices.where((d) => d.isOn).toList();
 
     if (activeDevices.isEmpty) {
       return const Card(

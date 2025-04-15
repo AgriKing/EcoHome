@@ -1,19 +1,13 @@
-// lib/data/mock_data.dart
+import 'package:hive/hive.dart';
 import '../models/device.dart';
 
 class MockData {
-  static List<Device> devices = [
+  static final List<Device> initialDevices = [
     Device(id: 1, name: "AC", isOn: true, watts: 1500, hoursPerDay: 4),
     Device(id: 2, name: "LED Lights", isOn: true, watts: 20, hoursPerDay: 6),
-    Device(
-        id: 3, name: "Refrigerator", isOn: true, watts: 200, hoursPerDay: 24),
+    Device(id: 3, name: "Refrigerator", isOn: true, watts: 200, hoursPerDay: 24),
     Device(id: 4, name: "TV", isOn: false, watts: 120, hoursPerDay: 2),
-    Device(
-        id: 5,
-        name: "Washing Machine",
-        isOn: false,
-        watts: 500,
-        hoursPerDay: 1),
+    Device(id: 5, name: "Washing Machine", isOn: false, watts: 500, hoursPerDay: 1),
   ];
 
   static List<String> energyTips = [
@@ -35,18 +29,27 @@ class MockData {
     'monthly': [85.5, 92.3, 78.8, 88.5, 94.7, 89.4, 82.3],
   };
 
-  static double calculateTotalConsumption() {
+  static Future<void> loadInitialMockData() async {
+    final deviceBox = Hive.box<Device>('devices');
+    if (deviceBox.isEmpty) {
+      for (final device in initialDevices) {
+        await deviceBox.put(device.id, device);
+      }
+    }
+  }
+
+  static double calculateTotalConsumption(List devices) {
     return devices
         .where((device) => device.isOn)
         .fold(0, (total, device) => total + device.dailyConsumption);
   }
 
-  static double calculateCost() {
+  static double calculateCost(List<Device> devices) {
     // Assuming ₹8 per kWh
-    return calculateTotalConsumption() * 8;
+    return calculateTotalConsumption(devices) * 8;
   }
 
-  static int getNextDeviceId() {
+  static int getNextDeviceId(List<Device> devices) {
     if (devices.isEmpty) return 1;
     return devices.map((d) => d.id).reduce((a, b) => a > b ? a : b) + 1;
   }

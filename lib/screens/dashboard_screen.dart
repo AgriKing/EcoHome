@@ -5,6 +5,12 @@ import '../widgets/stat_card.dart';
 import 'device_management_screen.dart';
 import 'energy_insights_screen.dart';
 import 'recommendations_screen.dart';
+import 'package:hive/hive.dart';
+import '../models/device.dart';
+import 'bill_prediction_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:smart_home_system/screens/login_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // Add this for Google sign out
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -16,15 +22,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {});
   }
 
+  // Handle logout functionality
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      // Show a confirmation dialog
+      bool confirm = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      ) ?? false;
+
+      if (confirm) {
+        // Sign out from Firebase
+        await FirebaseAuth.instance.signOut();
+
+        // Also sign out from Google if user signed in with Google
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        await googleSignIn.signOut();
+
+        // Navigate to login screen and remove all previous routes
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LogIn()),
+              (route) => false,
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error logging out: ${e.toString()}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    int activeDevices = MockData.devices.where((d) => d.isOn).length;
-    double todayCost = MockData.calculateCost();
-
+    final deviceBox = Hive.box<Device>('devices');
+    final devices = deviceBox.values.toList();
+    int activeDevices = devices.where((d) => d.isOn).length;
+    double todayCost = MockData.calculateCost(devices);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Smart Home Dashboard'),
         elevation: 0,
+        actions: [
+          // Add logout icon button
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () => _handleLogout(context),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -88,7 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 'Monitor and control your connected devices',
                 Icons.devices_other,
                 Colors.purple.shade100,
-                () {
+                    () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -105,7 +163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 'View your energy consumption patterns',
                 Icons.insert_chart,
                 Colors.blue.shade100,
-                () {
+                    () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -117,15 +175,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 16),
               _buildActionCard(
                 context,
+                'Predicted Bill',
+                'View your estimated electricity bill',
+                Icons.receipt_long,
+                Colors.teal.shade100,
+                    () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BillPredictionScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildActionCard(
+                context,
                 'Recommendations',
                 'Get tips to save energy and money',
                 Icons.lightbulb_outline,
                 Colors.amber.shade100,
-                () {
+                    () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => RecommendationsScreen(),
+                      builder: (context) => RecommendationsScreen(devices: devices,),
                     ),
                   );
                 },
@@ -154,7 +228,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 8),
                       Text(
                         MockData.energyTips[
-                            DateTime.now().day % MockData.energyTips.length],
+                        DateTime.now().day % MockData.energyTips.length],
                         style: const TextStyle(fontSize: 14),
                       ),
                     ],
@@ -169,13 +243,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildActionCard(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
+      BuildContext context,
+      String title,
+      String subtitle,
+      IconData icon,
+      Color color,
+      VoidCallback onTap,
+      ) {
     return Card(
       elevation: 2,
       child: InkWell(
